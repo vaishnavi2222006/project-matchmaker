@@ -63,7 +63,8 @@ const Navbar = () => {
                     <Link to="/dashboard" className="flex items-center space-x-2 group" onClick={() => setIsMobileMenuOpen(false)}>
                         <GitBranch className="w-7 h-7 sm:w-8 sm:h-8 text-light-accent dark:text-dark-primary transition-transform group-hover:rotate-12" />
                         <span className="text-lg sm:text-xl font-bold text-light-text dark:text-dark-text">
-                            <span className="dark:text-dark-primary">OS</span> Matchmaker
+                            <span className="dark:text-dark-primary">Projects-</span>Matchmaker
+
                         </span>
                     </Link>
 

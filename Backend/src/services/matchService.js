@@ -76,32 +76,40 @@ class MatchService {
       );
       const contributorFriendly = this.analysisService.assessContributorFriendliness(repo);
       const domainMatch = this.calculateDomainMatch(userProfile, repo);
+      const difficultyFit = this.calculateDifficultyFit(userProfile, repo);
+
 
       const weights = {
-        techMatch: 0.35,
-        recency: 0.20,
-        popularity: 0.10,
-        contributorFriendly: 0.25,
-        domainMatch: 0.10
-      };
+  techMatch: 0.30,
+  recency: 0.15,
+  popularity: 0.10,
+  contributorFriendly: 0.20,
+  domainMatch: 0.10,
+  difficultyFit: 0.15
+};
 
-      const total = Math.round(
-        (techMatch * weights.techMatch) +
-        (recency * weights.recency) +
-        (popularity * weights.popularity) +
-        (contributorFriendly * weights.contributorFriendly) +
-        (domainMatch * weights.domainMatch)
-      );
+
+    const total = Math.round(
+  (techMatch * weights.techMatch) +
+  (recency * weights.recency) +
+  (popularity * weights.popularity) +
+  (contributorFriendly * weights.contributorFriendly) +
+  (domainMatch * weights.domainMatch) +
+  (difficultyFit * weights.difficultyFit)
+);
+
 
       return {
         total,
         breakdown: {
-          techMatch: Math.round(techMatch),
-          recency: Math.round(recency),
-          popularity: Math.round(popularity),
-          contributorFriendly: Math.round(contributorFriendly),
-          domainMatch: Math.round(domainMatch)
-        }
+  techMatch: Math.round(techMatch),
+  recency: Math.round(recency),
+  popularity: Math.round(popularity),
+  contributorFriendly: Math.round(contributorFriendly),
+  domainMatch: Math.round(domainMatch),
+  difficultyFit: Math.round(difficultyFit)
+}
+
       };
     } catch (error) {
       console.error('[MatchService] Error calculating match score:', error);
@@ -179,6 +187,27 @@ class MatchService {
     if (matchCount === 2) return 80;
     return 100;
   }
+
+  /**
+ * Match repository difficulty with user's skill level
+ */
+calculateDifficultyFit(userProfile, repo) {
+  if (!repo.language || !userProfile.skillStrength) return 50;
+
+  const userSkill = userProfile.skillStrength[repo.language] || 50;
+
+  const repoComplexity =
+    Math.log10(repo.stargazers_count + 1) * 20 +
+    Math.log10(repo.forks_count + 1) * 10;
+
+  const diff = Math.abs(userSkill - repoComplexity);
+
+  if (diff < 20) return 100;
+  if (diff < 40) return 70;
+  if (diff < 60) return 50;
+  return 30;
+}
+
 
   /**
    * Filter repos by difficulty level

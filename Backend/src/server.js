@@ -19,7 +19,7 @@ if (missingEnvVars.length > 0) {
   logger.warn('GitHub authentication and other features may not work correctly.');
 }
 
-app.listen(PORT, () => {
+app.listen(PORT,'0.0.0.0',  () => {
   logger.info(`Server running on port ${PORT}`);
   logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
 });

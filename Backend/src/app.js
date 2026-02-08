@@ -11,6 +11,8 @@ const recommendationRoutes = require('./routes/recommendationRoutes');
 const searchRoutes = require('./routes/searchRoutes');
 const savedRoutes = require('./routes/savedRoutes');
 const issueRoutes = require('./routes/issueRoutes');
+const chatRoutes = require('./routes/chatRoutes');
+
 
 const app = express();
 
@@ -53,7 +55,7 @@ app.use('/recommend', recommendationRoutes);
 app.use('/search', searchRoutes);
 app.use('/saved', savedRoutes);
 app.use('/issues', issueRoutes);
-
+app.use('/chat', chatRoutes);
 app.use((err, req, res, next) => {
   logger.error('Unhandled error:', { error: err.message, stack: err.stack });
   res.status(500).json({

@@ -69,7 +69,7 @@ const Landing = () => {
                         <div className="flex items-center space-x-2">
                             <GitBranch className="w-8 h-8 text-light-accent dark:text-dark-primary" />
                             <span className="text-xl font-bold text-light-text dark:text-dark-text">
-                                <span className="dark:text-dark-primary">OS</span> Matchmaker
+                                <span className="dark:text-dark-primary">Projects-</span> Matchmaker
                             </span>
                         </div>
                         <div className="flex items-center space-x-4">
@@ -260,11 +260,11 @@ const Landing = () => {
                         <div className="flex items-center space-x-2">
                             <GitBranch className="w-6 h-6 text-light-accent dark:text-dark-primary" />
                             <span className="font-semibold text-light-text dark:text-dark-text">
-                                OS Matchmaker
+                                Projects- Matchmaker
                             </span>
                         </div>
                         <div className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
-                            © 2025 Open Source Matchmaker. Empowering developers through open-source.
+                            © 2025 Projects-Matchmaker. Empowering developers through open-source.
                         </div>
                     </div>
                 </div>

@@ -18,6 +18,7 @@ import Issues from './pages/Issues';
 // Components
 import Navbar from './components/Navbar';
 import Toast from './components/Toast';
+import AIChat from "./components/AIChat";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -110,10 +111,12 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            
 
             {/* Default Route */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          <AIChat />
           <Toast />
         </div>
       </BrowserRouter>
