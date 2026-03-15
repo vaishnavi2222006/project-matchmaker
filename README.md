@@ -1,4 +1,4 @@
-﻿# 🚀 Open Source Matchmaker
+﻿# 🚀 Project-Matchmaker
 
 An AI-powered platform that matches developers with open-source projects based on their skills, interests, and GitHub profile analysis. Find your perfect open-source contribution opportunity!
 
