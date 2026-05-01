@@ -1,5 +1,5 @@
 import { useState } from "react";
-import axios from "axios";
+import apiClient from "../services/apiClient";
 
 export default function AIChat() {
   const [open, setOpen] = useState(false);
@@ -13,7 +13,7 @@ export default function AIChat() {
     setMessages(prev => [...prev, userMsg]);
 
     try {
-      const res = await axios.post("http://localhost:5000/chat", { message: input });
+      const res = await apiClient.post("/chat", { message: input });
       const aiMsg = { sender: "ai", text: res.data.reply };
       setMessages(prev => [...prev, aiMsg]);
     } catch (err) {

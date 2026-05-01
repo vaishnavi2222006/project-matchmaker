@@ -1,450 +1,258 @@
-# Deployment Guide - Open Source Matchmaker
+# 🚀 Deployment Guide — Open Source Matchmaker
 
-## 📦 Deployment Options
+**Stack**: Node.js/Express backend → **Render** | React/Vite frontend → **Vercel**
 
-### Option 1: Vercel (Recommended for Frontend)
+---
 
-#### Frontend Deployment
+## ⚠️ Security First — API Key Safety
 
-1. **Install Vercel CLI**
-   ```bash
-   npm install -g vercel
-   ```
+> **Never commit `.env` files to Git.** Both `Backend/.env` and `frontend/.env` are already in their respective `.gitignore` files — correct and safe.
 
-2. **Navigate to Frontend**
-   ```bash
-   cd frontend
-   ```
+### Golden Rules
+- All secrets go into the **hosting platform's dashboard** (Render / Vercel), never in code or git.
+- The only value the frontend can expose is `VITE_GITHUB_CLIENT_ID` (public OAuth Client ID — not a secret).
+- `GITHUB_CLIENT_SECRET`, `SUPABASE_SERVICE_ROLE_KEY`, `JWT_SECRET`, `GEMINI_API_KEY` must **only** live on Render — never in the frontend.
 
-3. **CRITICAL: Ensure `vercel.json` exists** (already included in repo)
-   This file ensures SPA routing works correctly and prevents 404 errors on routes like `/auth/callback`:
-   ```json
-   {
-     "rewrites": [
-       {
-         "source": "/(.*)",
-         "destination": "/index.html"
-       }
-     ]
-   }
-   ```
-
-4. **Deploy**
-   ```bash
-   vercel
-   ```
-
-5. **Environment Variables**
-   Add in Vercel dashboard:
-   ```
-   VITE_API_URL=https://your-backend-url.com
-   VITE_APP_NAME=Open Source Matchmaker
-   VITE_ENABLE_API_DISCOVERY=true
-   ```
-
-6. **Production Deploy**
-   ```bash
-   vercel --prod
-   ```
-
-### Option 2: Netlify (Alternative for Frontend)
-
-1. **Install Netlify CLI**
-   ```bash
-   npm install -g netlify-cli
-   ```
-
-2. **CRITICAL: Create `_redirects` file** in `frontend/public`:
-   ```
-   /*    /index.html   200
-   ```
-   This prevents 404 errors on SPA routes like `/auth/callback`.
-
-3. **Build**
-   ```bash
-   cd frontend
-   npm run build
-   ```
-
-4. **Deploy**
-   ```bash
-   netlify deploy --prod --dir=dist
-   ```
-
-5. **Set Environment Variables** in Netlify dashboard
-
-### Option 3: Railway/Render (For Both Backend & Frontend)
-
-#### Backend Deploy (Railway)
-
-1. Create `Procfile`:
-   ```
-   web: node src/server.js
-   ```
-
-2. Push to GitHub
-
-3. Connect to Railway:
-   - Visit [railway.app](https://railway.app)
-   - New Project → Deploy from GitHub
-   - Select repository
-   - Add environment variables
-
-#### Frontend Deploy (Railway)
-
-1. Create `railway.json`:
-   ```json
-   {
-     "build": {
-       "builder": "NIXPACKS"
-     },
-     "deploy": {
-       "startCommand": "npm run build && npm run preview -- --host 0.0.0.0 --port $PORT",
-       "restartPolicyType": "ON_FAILURE"
-     }
-   }
-   ```
-
-2. Push and connect to Railway
-
-### Option 4: Docker Deployment
-
-#### Frontend Dockerfile
-
-Create `frontend/Dockerfile`:
-```dockerfile
-FROM node:18-alpine
-
-WORKDIR /app
-
-COPY package*.json ./
-RUN npm ci
-
-COPY . .
-
-RUN npm run build
-
-# Install serve to run the production build
-RUN npm install -g serve
-
-EXPOSE 5173
-
-CMD ["serve", "-s", "dist", "-l", "5173"]
-```
-
-#### Docker Compose (Both Services)
-
-Create `docker-compose.yml` in root:
-```yaml
-version: '3.8'
-
-services:
-  backend:
-    build: ./Contributor-main
-    ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=production
-      - FRONTEND_URL=http://localhost:5173
-      - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
-      - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
-      - JWT_SECRET=${JWT_SECRET}
-    depends_on:
-      - database
-
-  frontend:
-    build: ./frontend
-    ports:
-      - "5173:5173"
-    environment:
-      - VITE_API_URL=http://localhost:3000
-    depends_on:
-      - backend
-
-  database:
-    image: postgres:15
-    ports:
-      - "5432:5432"
-    environment:
-      - POSTGRES_DB=oss_matchmaker
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-volumes:
-  postgres_data:
-```
-
-Run with:
-```bash
-docker-compose up -d
-```
-
-## 🔐 Environment Variables
-
-### Backend (.env)
-```env
-# Server
-PORT=3000
-NODE_ENV=production
-FRONTEND_URL=https://your-frontend-url.com
-
-# GitHub OAuth
-GITHUB_CLIENT_ID=your_client_id
-GITHUB_CLIENT_SECRET=your_client_secret
-GITHUB_CALLBACK_URL=https://your-backend-url.com/auth/callback
-
-# JWT
-JWT_SECRET=your_super_secret_key_min_32_chars
-JWT_EXPIRES_IN=7d
-
-# Database (if using Supabase/PostgreSQL)
-DATABASE_URL=postgresql://user:password@host:5432/database
-
-# Supabase (if using)
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_KEY=your_supabase_anon_key
-```
-
-### Frontend (.env)
-```env
-VITE_API_URL=https://your-backend-url.com
-VITE_APP_NAME=Open Source Matchmaker
-VITE_ENABLE_API_DISCOVERY=true
-```
+---
 
 ## 📋 Pre-Deployment Checklist
 
-### Backend
-- [ ] Set all environment variables
-- [ ] Configure GitHub OAuth app
-  - Homepage URL: `https://your-frontend-url.com`
-  - Callback URL: `https://your-backend-url.com/auth/callback`
-- [ ] Set up database (Supabase/PostgreSQL)
-- [ ] Test API endpoints
-- [ ] Enable CORS for frontend URL
-- [ ] Set up logging/monitoring
+- [ ] All code pushed to GitHub (`Backend/` and `frontend/` changes committed)
+- [ ] [Render account](https://render.com) created (free tier is fine)
+- [ ] [Vercel account](https://vercel.com) created (free tier is fine)
+- [ ] Supabase project is live and database tables exist
 
-### Frontend
-- [ ] Update API URL in environment
-- [ ] Test build locally (`npm run build`)
-- [ ] Verify all routes work
-- [ ] Check responsive design
-- [ ] Test dark/light themes
-- [ ] Optimize images
-- [ ] Test authentication flow
+---
 
-### Security
-- [ ] Use HTTPS in production
-- [ ] Secure JWT secret (min 32 characters)
-- [ ] Enable rate limiting
-- [ ] Set secure CORS policy
-- [ ] Add CSP headers
-- [ ] Regular dependency updates
+## Step 1 — Deploy Backend to Render
 
-## 🚀 GitHub OAuth Setup
+### 1.1 Push latest code to GitHub
 
-1. **Create GitHub OAuth App**
-   - Go to GitHub Settings → Developer Settings → OAuth Apps
-   - Click "New OAuth App"
-   - Fill in:
-     - Application name: Open Source Matchmaker
-     - Homepage URL: `https://your-frontend-url.com`
-     - Authorization callback URL: `https://your-backend-url.com/auth/callback`
-   - Save and copy Client ID and Client Secret
-
-2. **Update Environment Variables**
-   - Add to backend `.env`
-   - Redeploy backend service
-
-## 📊 Post-Deployment
-
-### Monitoring
-- Set up error tracking (Sentry)
-- Analytics (Google Analytics, Plausible)
-- Uptime monitoring (UptimeRobot)
-- Performance monitoring (Lighthouse)
-
-### Testing
-1. Test OAuth flow end-to-end
-2. Verify all API endpoints
-3. Check theme switching
-4. Test on mobile devices
-5. Verify search functionality
-6. Test save/unsave features
-
-### Performance
-- Enable gzip compression
-- Use CDN for static assets
-- Implement caching headers
-- Optimize images
-- Minimize bundle size
-
-## 🔄 CI/CD Setup
-
-### GitHub Actions (Frontend)
-
-Create `.github/workflows/deploy-frontend.yml`:
-```yaml
-name: Deploy Frontend
-
-on:
-  push:
-    branches: [main]
-    paths:
-      - 'frontend/**'
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-          
-      - name: Install dependencies
-        run: |
-          cd frontend
-          npm ci
-          
-      - name: Build
-        run: |
-          cd frontend
-          npm run build
-        env:
-          VITE_API_URL: ${{ secrets.VITE_API_URL }}
-          
-      - name: Deploy to Vercel
-        run: |
-          cd frontend
-          npx vercel --prod --token=${{ secrets.VERCEL_TOKEN }}
+```bash
+cd /path/to/Projects-Matchmaker
+git add .gitignore Backend/render.yaml frontend/vercel.json frontend/vite.config.js
+git commit -m "chore: deployment configs with performance optimizations"
+git push origin main
 ```
 
-### GitHub Actions (Backend)
+### 1.2 Create Web Service on Render
 
-Create `.github/workflows/deploy-backend.yml`:
-```yaml
-name: Deploy Backend
+1. Go to [dashboard.render.com](https://dashboard.render.com) → **New** → **Web Service**
+2. Connect GitHub → select this repository
+3. Fill in these settings:
 
-on:
-  push:
-    branches: [main]
-    paths:
-      - 'Contributor-main/**'
+| Setting | Value |
+|---|---|
+| **Name** | `oss-matchmaker-backend` |
+| **Region** | Oregon (or closest to you) |
+| **Root Directory** | `Backend` |
+| **Runtime** | Node |
+| **Build Command** | `npm install` |
+| **Start Command** | `npm start` |
+| **Instance Type** | Free |
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Deploy to Railway
-        run: |
-          npm install -g @railway/cli
-          railway up
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+4. Click **Create Web Service** — Render auto-detects `Backend/render.yaml`.
+
+### 1.3 Set Environment Variables on Render
+
+Navigate to your service → **Environment** tab → add each variable:
+
+```
+NODE_ENV                  = production
+PORT                      = 10000
+GITHUB_CLIENT_ID          = Ov23licOJ4yuyKZGT9Rz
+GITHUB_CLIENT_SECRET      = <from your GitHub OAuth App>
+GITHUB_CALLBACK_URL       = https://<your-render-name>.onrender.com/auth/github/callback
+JWT_SECRET                = <your jwt secret — min 32 chars>
+JWT_EXPIRE                = 7d
+SUPABASE_URL              = https://ljypjkbyqzdzaicewkkp.supabase.co
+SUPABASE_ANON_KEY         = <your supabase anon key>
+SUPABASE_SERVICE_ROLE_KEY = <your supabase service role key>
+GEMINI_API_KEY            = <your gemini api key>
+FRONTEND_URL              = https://<your-vercel-app>.vercel.app
+CLIENT_URL                = https://<your-vercel-app>.vercel.app
 ```
 
-## 📈 Scaling
+> Fill in `FRONTEND_URL` and `CLIENT_URL` after you complete Step 2. Use placeholder for now and update after.
 
-### Frontend
-- Use CDN (Cloudflare, Vercel Edge)
-- Implement code splitting
-- Lazy load routes
-- Optimize bundle size
-- Enable caching
+### 1.4 Verify the backend is live
 
-### Backend
-- Horizontal scaling (multiple instances)
-- Database connection pooling
-- Redis caching
-- Load balancer
-- Rate limiting
+Visit `https://<your-render-name>.onrender.com` — you should see:
+```json
+{ "message": "Open Source Matchmaker API", "version": "1.0.0" }
+```
+
+---
+
+## Step 2 — Deploy Frontend to Vercel
+
+### 2.1 Deploy via Vercel Dashboard
+
+1. Go to [vercel.com/new](https://vercel.com/new)
+2. Import your GitHub repository
+3. Configure:
+
+| Setting | Value |
+|---|---|
+| **Framework Preset** | Vite |
+| **Root Directory** | `frontend` |
+| **Build Command** | `npm run build` |
+| **Output Directory** | `dist` |
+| **Install Command** | `npm install` |
+
+### 2.2 Set Environment Variables on Vercel
+
+Go to **Settings** → **Environment Variables**:
+
+```
+VITE_API_URL              = https://<your-render-name>.onrender.com
+VITE_APP_NAME             = Open Source Matchmaker
+VITE_ENABLE_API_DISCOVERY = true
+VITE_GITHUB_CLIENT_ID     = Ov23licOJ4yuyKZGT9Rz
+```
+
+> ⚠️ **Do NOT add** `GITHUB_CLIENT_SECRET`, `SUPABASE_SERVICE_ROLE_KEY`, `JWT_SECRET`, or `GEMINI_API_KEY` to Vercel. These are backend-only secrets.
+
+4. Click **Deploy**
+
+---
+
+## Step 3 — Update GitHub OAuth App
+
+1. Go to [github.com/settings/developers](https://github.com/settings/developers) → **OAuth Apps** → your app
+2. Update:
+
+| Field | Value |
+|---|---|
+| **Homepage URL** | `https://<your-vercel-app>.vercel.app` |
+| **Authorization callback URL** | `https://<your-render-name>.onrender.com/auth/github/callback` |
+
+3. Click **Save changes**
+
+---
+
+## Step 4 — Cross-Link Both Services
+
+Go back to **Render** and update the placeholder values:
+```
+FRONTEND_URL = https://<your-vercel-app>.vercel.app
+CLIENT_URL   = https://<your-vercel-app>.vercel.app
+```
+
+Then **redeploy both**:
+- Render → **Manual Deploy** button
+- Vercel → automatic (or Deployments → ··· → Redeploy)
+
+---
+
+## ⚡ Performance Optimizations (Already Applied)
+
+### Frontend — `vite.config.js`
+| Optimization | Effect |
+|---|---|
+| Manual chunk splitting (`vendor`, `ui`, `data`, `charts`) | Each chunk cached independently by browser |
+| ESBuild minification | Fastest minifier — smaller JS/CSS output |
+| `sourcemap: false` | Smaller production bundles |
+| Hashed filenames (Vite default) | Enables 1-year immutable cache on Vercel |
+
+### Frontend — `vercel.json`
+| Config | Effect |
+|---|---|
+| `Cache-Control: immutable` on `/assets/*` | Browser never re-downloads unchanged JS/CSS |
+| SPA rewrites `/* → /index.html` | No 404 on page refresh or direct URL |
+| Security headers on all routes | `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy` |
+
+### Backend — `src/app.js`
+| Middleware | Effect |
+|---|---|
+| `compression` | Gzip all responses — ~70% smaller payloads |
+| `helmet` | Security headers (CSP, HSTS, etc.) |
+| `express-rate-limit` | 100 req/15min per IP — DDoS protection |
+| `0.0.0.0` bind | Required for Render to route external traffic |
+
+---
+
+## 🔄 Future Deploys
+
+Every `git push origin main` triggers an automatic redeploy on **both** Render and Vercel. No manual steps needed for code updates after the first setup.
+
+---
 
 ## 🐛 Troubleshooting
 
-### CORS Issues
-- Check `FRONTEND_URL` in backend env
-- Verify CORS middleware configuration
-- Ensure URLs match exactly (no trailing slash)
+### Slow first response on Render (Free Tier)
+Render free services spin down after 15 min idle and take ~30s to wake up.
 
-### OAuth Not Working
-- Verify callback URLs match in GitHub app settings
-- Check CLIENT_ID and CLIENT_SECRET
-- Ensure HTTPS in production
+**Free fix — UptimeRobot**:
+1. Sign up at [uptimerobot.com](https://uptimerobot.com) (free)
+2. Add Monitor → HTTP(S) → URL: `https://<your-render-name>.onrender.com`
+3. Interval: **5 minutes** → Save
+4. This keeps the service warm at no cost
 
-### **404 Error on /callback**
-**Symptom**: `Failed to load resource: the server responded with a status of 404` on the callback URL
+**Paid fix**: Upgrade to Render Starter ($7/mo) — always-on, no spin-down.
 
-**Common Causes & Fixes**:
-1. **Missing `VITE_API_URL` in frontend**
-   - Check: Frontend `.env` has `VITE_API_URL=https://your-backend-url.com`
-   - Solution: Add the environment variable in your hosting platform (Vercel/Netlify)
-   
-2. **Wrong `FRONTEND_URL` in backend**
-   - Check: Backend `.env` has `FRONTEND_URL=https://your-frontend-url.com`
-   - Solution: Update to match your actual frontend domain (no trailing slash)
-   
-3. **Hardcoded localhost URLs**
-   - Check: Search codebase for `http://localhost:3000` or `http://localhost:5173`
-   - Solution: All API calls should use `VITE_API_URL` environment variable
-   - **Fixed in**: `AuthCallback.jsx` now uses centralized `apiClient`
+### CORS error in browser console
+- Check `FRONTEND_URL` on Render matches your Vercel URL **exactly**
+- ✅ `https://my-app.vercel.app` — no trailing slash
+- ❌ `https://my-app.vercel.app/` — trailing slash breaks CORS matching
 
-4. **GitHub OAuth callback mismatch**
-   - Check: GitHub OAuth app callback URL = `https://your-backend-url.com/auth/callback`
-   - Solution: Update in [GitHub Developer Settings](https://github.com/settings/developers)
+### 404 on `/auth/github/callback`
+1. GitHub OAuth app → callback URL = `https://<render-url>/auth/github/callback` ✅
+2. `VITE_API_URL` on Vercel → points to Render URL (not localhost) ✅
+3. Redeploy frontend after changing env vars ✅
 
-**Verification Steps**:
-1. Open browser DevTools → Network tab
-2. Login with GitHub
-3. Check the callback request URL
-4. If it shows `localhost`, environment variables are not set correctly
-5. Redeploy after setting environment variables
+### Env var not taking effect on Vercel
+Vercel requires a full redeploy after env changes:
+Deployments tab → click **···** on latest → **Redeploy**
 
-### Build Failures
-- Clear `node_modules` and reinstall
-- Check Node.js version (use v18+)
-- Verify environment variables
-- Check for typos in imports
-
-## 📚 Resources
-
-- [Vercel Docs](https://vercel.com/docs)
-- [Netlify Docs](https://docs.netlify.com)
-- [Railway Docs](https://docs.railway.app)
-- [Docker Docs](https://docs.docker.com)
-- [GitHub OAuth Docs](https://docs.github.com/en/developers/apps/building-oauth-apps)
-
----
-
-## ✅ Quick Deploy Commands
-
-### Development
+### Build fails on Vercel
 ```bash
-# Start backend
-cd Contributor-main && npm start
-
-# Start frontend
-cd frontend && npm run dev
-```
-
-### Production
-```bash
-# Build frontend
+# Test production build locally first
 cd frontend && npm run build
-
-# Deploy frontend (Vercel)
-cd frontend && vercel --prod
-
-# Deploy backend (Railway)
-cd Contributor-main && railway up
+# If it passes locally, check Node version in Vercel Settings → General → Node.js version → 20.x
 ```
+
+### View backend logs
+Render Dashboard → your service → **Logs** tab (real-time)
 
 ---
 
-**🎉 Your app is ready for production!**
+## 🔐 Security Reference
+
+| Secret | Render | Vercel | Exposed to browser? |
+|---|---|---|---|
+| `GITHUB_CLIENT_ID` | ✅ | ✅ (as `VITE_`) | ✅ Safe — public OAuth ID |
+| `GITHUB_CLIENT_SECRET` | ✅ | ❌ Never | ❌ Never |
+| `JWT_SECRET` | ✅ | ❌ Never | ❌ Never |
+| `SUPABASE_ANON_KEY` | ✅ | ❌ Never | ❌ Never |
+| `SUPABASE_SERVICE_ROLE_KEY` | ✅ | ❌ Never | ❌ Never |
+| `GEMINI_API_KEY` | ✅ | ❌ Never | ❌ Never |
+
+---
+
+## ✅ Post-Deployment Checklist
+
+- [ ] `https://<render-url>/` → returns JSON health check
+- [ ] `https://<vercel-url>/` → frontend loads correctly
+- [ ] GitHub OAuth login completes end-to-end
+- [ ] Browser DevTools → Network → zero requests going to `localhost`
+- [ ] `FRONTEND_URL` on Render = Vercel URL (no trailing slash)
+- [ ] `VITE_API_URL` on Vercel = Render URL (no trailing slash)
+- [ ] GitHub OAuth callback URL updated in GitHub Settings
+- [ ] UptimeRobot monitor live → no more cold starts
+
+---
+
+## 📚 Quick Reference
+
+| Resource | URL |
+|---|---|
+| Render Dashboard | https://dashboard.render.com |
+| Vercel Dashboard | https://vercel.com/dashboard |
+| GitHub OAuth Apps | https://github.com/settings/developers |
+| Supabase Dashboard | https://supabase.com/dashboard |
+| UptimeRobot (free keep-alive) | https://uptimerobot.com |
+
+---
+
+**🎉 Your app is deployed — fast responses, zero exposed secrets.**

@@ -1,0 +1,21 @@
+# Root-level gitignore — catches any .env accidentally placed here
+.env
+.env.local
+.env.production
+.env.*.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Dependency directories (if root ever gets packages)
+node_modules/
+
+# Logs
+*.log
+npm-debug.log*

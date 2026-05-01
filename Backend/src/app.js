@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const logger = require('./config/logger');
 require('dotenv').config();
@@ -17,10 +18,26 @@ const chatRoutes = require('./routes/chatRoutes');
 const app = express();
 
 app.use(helmet());
+app.use(compression());
+
+// Build CORS allowlist: dev localhost + production frontend + Vercel preview URLs
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  process.env.FRONTEND_URL,
+  process.env.CLIENT_URL,
+].filter(Boolean);
 
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-  credentials: true
+  origin: (origin, callback) => {
+    // Allow non-browser requests (curl, Postman, server-to-server)
+    if (!origin) return callback(null, true);
+    // Allow any Vercel preview deploy of this project
+    if (origin.includes('.vercel.app')) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error(`CORS policy: Origin ${origin} not allowed`));
+  },
+  credentials: true,
 }));
 
 app.use(express.json());
@@ -33,6 +50,11 @@ const limiter = rateLimit({
 });
 
 app.use('/api/', limiter);
+
+// Lightweight health check — used by Render & UptimeRobot
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', uptime: process.uptime() });
+});
 
 app.get('/', (req, res) => {
   res.json({
